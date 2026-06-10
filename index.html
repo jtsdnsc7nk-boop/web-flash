@@ -1,14 +1,345 @@
-<!doctype html>
-<html lang="pl">
+<!DOCTYPE html>
+<html lang="pl" data-theme="dark">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>T-Embed CC1101 Web Flasher</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>T-Embed CC1101 Flasher</title>
   <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #0d0f10;
+      --surface:   #131618;
+      --surface-2: #1a1d20;
+      --border:    rgba(255,255,255,0.07);
+      --text:      #e2e4e6;
+      --muted:     #6b7280;
+      --faint:     #374151;
+      --primary:   #22d3a0;
+      --primary-dim: rgba(34,211,160,0.12);
+      --primary-glow: rgba(34,211,160,0.25);
+      --warn:      #f59e0b;
+      --radius:    10px;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-ui:   'Inter', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-ui);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+    }
+
+    header {
+      width: 100%;
+      max-width: 680px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2.5rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      text-decoration: none;
+    }
+
+    .logo-icon { width: 32px; height: 32px; flex-shrink: 0; }
+
+    .logo-text {
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--primary);
+      letter-spacing: 0.04em;
+    }
+
+    .badge {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: var(--primary-dim);
+      color: var(--primary);
+      border: 1px solid rgba(34,211,160,0.2);
+      border-radius: 999px;
+      padding: 0.2rem 0.65rem;
+      letter-spacing: 0.05em;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 680px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .card-header {
+      padding: 1.75rem 2rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .chip-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--muted);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.2rem 0.6rem;
+      letter-spacing: 0.04em;
+    }
+
+    .chip.green {
+      color: var(--primary);
+      background: var(--primary-dim);
+      border-color: rgba(34,211,160,0.2);
+    }
+
+    h1 {
+      font-size: clamp(1.25rem, 3vw, 1.6rem);
+      font-weight: 600;
+      color: #f1f5f9;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .steps {
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.875rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .step { display: flex; align-items: flex-start; gap: 0.875rem; }
+
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--muted);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .step-text { font-size: 0.875rem; color: var(--muted); line-height: 1.6; }
+    .step-text strong { color: var(--text); font-weight: 500; }
+    .step-text code {
+      font-family: var(--font-mono);
+      font-size: 0.8em;
+      background: var(--surface-2);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    .flash-area {
+      padding: 1.75rem 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .flash-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    esp-web-install-button::part(button) {
+      background: var(--primary);
+      color: #0a0e0b;
+      font-family: var(--font-ui);
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius);
+      padding: 0.7rem 1.5rem;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      transition: box-shadow 0.15s, transform 0.1s, background 0.15s;
+    }
+
+    esp-web-install-button::part(button):hover {
+      background: #1fbf91;
+      box-shadow: 0 0 18px var(--primary-glow);
+      transform: translateY(-1px);
+    }
+
+    .browser-note {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--faint);
+    }
+
+    .warn-box {
+      margin: 0 2rem 1.75rem;
+      background: rgba(245,158,11,0.07);
+      border: 1px solid rgba(245,158,11,0.18);
+      border-radius: var(--radius);
+      padding: 0.875rem 1rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+
+    .warn-icon { color: var(--warn); flex-shrink: 0; margin-top: 1px; }
+    .warn-text { font-size: 0.8125rem; color: #d4a944; line-height: 1.55; }
+
+    .info-box {
+      padding: 1rem 2rem 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .info-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 0.5rem;
+      font-size: 0.8125rem;
+    }
+
+    .info-key { color: var(--muted); font-family: var(--font-mono); font-size: 0.75rem; }
+    .info-val { color: var(--text); font-family: var(--font-mono); font-size: 0.75rem; }
+
+    footer {
+      margin-top: 2rem;
+      font-size: 0.75rem;
+      color: var(--faint);
+      text-align: center;
+    }
+
+    footer a { color: var(--muted); text-decoration: none; transition: color 0.15s; }
+    footer a:hover { color: var(--primary); }
+
+    @media (max-width: 480px) {
+      .card-header, .steps, .flash-area, .info-box { padding-left: 1.25rem; padding-right: 1.25rem; }
+      .warn-box { margin-left: 1.25rem; margin-right: 1.25rem; }
+      .info-row { grid-template-columns: 1fr; gap: 0.1rem; }
+      .info-key { color: var(--faint); }
+    }
+  </style>
 </head>
-<body style="font-family:Arial,sans-serif;max-width:720px;margin:40px auto;padding:0 16px;background:#111;color:#eee;">
-  <h1>T-Embed CC1101 Web Flasher</h1>
-  <p>Podłącz urządzenie przez USB i użyj Chrome albo Edge.</p>
-  <esp-web-install-button manifest="manifest.json"></esp-web-install-button>
+<body>
+
+  <header>
+    <a href="#" class="logo">
+      <svg class="logo-icon" viewBox="0 0 32 32" fill="none" aria-label="T-Embed CC1101 logo">
+        <rect width="32" height="32" rx="7" fill="#131618"/>
+        <rect x="1" y="1" width="30" height="30" rx="6" stroke="rgba(34,211,160,0.25)" stroke-width="1"/>
+        <line x1="8" y1="16" x2="5" y2="16" stroke="#22d3a0" stroke-width="1" stroke-linecap="round" opacity=".5"/>
+        <line x1="24" y1="16" x2="27" y2="16" stroke="#22d3a0" stroke-width="1" stroke-linecap="round" opacity=".5"/>
+        <line x1="16" y1="8" x2="16" y2="5" stroke="#22d3a0" stroke-width="1" stroke-linecap="round" opacity=".5"/>
+        <line x1="16" y1="24" x2="16" y2="27" stroke="#22d3a0" stroke-width="1" stroke-linecap="round" opacity=".5"/>
+        <path d="M9 11h6M12 11v10" stroke="#22d3a0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M17 11h6M17 11v10M17 16h5M17 21h6" stroke="#e2e4e6" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="logo-text">T-EMBED CC1101</span>
+    </a>
+    <span class="badge">v1.1.5</span>
+  </header>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="chip-row">
+        <span class="chip green">ESP32-S3</span>
+        <span class="chip">16 MB Flash</span>
+        <span class="chip">8 MB PSRAM</span>
+        <span class="chip">CC1101</span>
+      </div>
+      <h1>Web Flasher</h1>
+      <p class="subtitle">Wgraj firmware bezpośrednio z przeglądarki — bez instalowania żadnych narzędzi. Wystarczy kabel USB i Chrome lub Edge.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">1</span>
+        <p class="step-text">Podłącz <strong>T-Embed CC1101</strong> do komputera kablem USB-C (data, nie samo ładowanie).</p>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <p class="step-text">Kliknij <strong>Install</strong>, wybierz port <code>USB JTAG/serial debug unit</code> i potwierdź.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <p class="step-text">Poczekaj na zakończenie flashowania (~30 s). Urządzenie zrestartuje się automatycznie.</p>
+      </div>
+    </div>
+
+    <div class="flash-area">
+      <span class="flash-label">Zainstaluj firmware</span>
+      <esp-web-install-button manifest="manifest.json"></esp-web-install-button>
+      <p class="browser-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Wymaga przeglądarki Chrome lub Edge na desktopie (Web Serial API)
+      </p>
+    </div>
+
+    <div class="warn-box">
+      <svg class="warn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <p class="warn-text">Flash <strong>nadpisze</strong> cały dotychczasowy firmware. Wszelkie ustawienia i dane zostaną skasowane. Upewnij się że masz właściwe urządzenie zanim klikniesz Install.</p>
+    </div>
+
+    <div class="info-box">
+      <div class="info-row"><span class="info-key">chip</span><span class="info-val">ESP32-S3 (QFN56) rev 0.2</span></div>
+      <div class="info-row"><span class="info-key">bootloader</span><span class="info-val">0x0000 — bootloader.bin</span></div>
+      <div class="info-row"><span class="info-key">partition table</span><span class="info-val">0x8000 — partition-table.bin</span></div>
+      <div class="info-row"><span class="info-key">ota data</span><span class="info-val">0xF000 — ota_data_initial.bin</span></div>
+      <div class="info-row"><span class="info-key">firmware</span><span class="info-val">0x20000 — furi_esp32.bin (2.7 MB)</span></div>
+    </div>
+  </div>
+
+  <footer>
+    Firmware skompilowany lokalnie z
+    <a href="https://github.com/jtsdnsc7nk-boop/web-flash" target="_blank" rel="noopener noreferrer">FlipperESP-32 v1.1.5</a>
+    &nbsp;·&nbsp;
+    Web flasher oparty na
+    <a href="https://esphome.github.io/esp-web-tools/" target="_blank" rel="noopener noreferrer">ESP Web Tools</a>
+  </footer>
+
 </body>
 </html>
